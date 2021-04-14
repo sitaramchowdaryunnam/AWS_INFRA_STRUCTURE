@@ -23,18 +23,34 @@ resource "aws_vpc" "isonetwork" {
 }
 
 
-# creating a aws_subnet
-resource "aws_subnet" "two_tier_sub" {
+# creating an aws_subnet
+resource "aws_subnet" "Webserver" {
   #count = length(var.CIDRS)  
   #name = "${element(var.Name,count.index)}"
-  count = "${var.env == "prod" ? 2:1}"
+  #count = "${var.env == "prod" ? 2:1}"
   vpc_id     = "${aws_vpc.isonetwork.id}"
-  cidr_block = "${element(var.CIDRS,count.index)}"
-  #cidr_block = "10.1.1.0/24"
+  #cidr_block = "${element(var.CIDRS,count.index)}"
+  cidr_block = "10.0.1.0/24"
   #availability_zone ="${element(var.azs,count.index)}"
   availability_zone = "us-east-1a"
   tags = {
-    Name = "${element(var.Name,count.index)}"
+    Name = "RedPublic"
+
+  }
+}
+
+# creating an aws_subnet
+resource "aws_subnet" "Database" {
+  #count = length(var.CIDRS)  
+  #name = "${element(var.Name,count.index)}"
+  #count = "${var.env == "prod" ? 2:1}"
+  vpc_id     = "${aws_vpc.isonetwork.id}"
+  #cidr_block = "${element(var.CIDRS,count.index)}"
+  cidr_block = "10.0.2.0/24"
+  #availability_zone ="${element(var.azs,count.index)}"
+  availability_zone = "us-east-1a"
+  tags = {
+    Name = "RedPrivate"
 
   }
 }
@@ -48,7 +64,7 @@ resource "aws_internet_gateway" "testing_gateway" {
   }
 }
 
-#creating a aws_routetable
+#creating an aws_routetable
 resource "aws_route_table" "routetesting" {
   vpc_id = "${aws_vpc.isonetwork.id}"
 
@@ -62,12 +78,51 @@ resource "aws_route_table" "routetesting" {
   }
 }
 
-#creating a aws_route_table_association
+#creating an aws_route_table_association
 resource "aws_route_table_association" "routetesting_ass" { 
-  count = "${length(aws_subnet.two_tier_sub)-1}"  
-  subnet_id      = "${element(aws_subnet.two_tier_sub.*.id,count.index)}"
+  #count = "${length(aws_subnet.two_tier_sub)-1}"  
+  #subnet_id      = "${element(aws_subnet.two_tier_sub.*.id,count.index)}"
   route_table_id = "${aws_route_table.routetesting.id}"
-  #subnet_id    = "${aws_subnet.testing_sub.id}"
+  subnet_id    = "${aws_subnet.Webserver.id}"
+}
+
+
+resource "aws_eip" "NatEip" {
+  #instance = aws_instance.web.id
+  vpc      = true
+}
+
+resource "aws_nat_gateway" "Natgw" {
+  allocation_id = aws_eip.NatEip.id
+  subnet_id     = aws_subnet.Webserver.id
+  #  depends_on = [
+  #   aws_eip.NatEip
+  # ]
+  tags = {
+    Name = "NAT gw"
+  }
+}
+
+#creating an aws_NATroutetable
+resource "aws_route_table" "NATroutetesting" {
+  vpc_id = "${aws_vpc.isonetwork.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = "${aws_nat_gateway.Natgw.id}"
+  }
+
+  tags = {
+    Name = "RedNat"
+  }
+}
+
+#creating an aws_NATroute_table_association
+resource "aws_route_table_association" "NATroutetesting_ass" { 
+  #count = "${length(aws_subnet.two_tier_sub)-1}"  
+  #subnet_id      = "${element(aws_subnet.two_tier_sub.*.id,count.index)}"
+  route_table_id = "${aws_route_table.NATroutetesting.id}"
+  subnet_id    = "${aws_subnet.Database.id}"
 }
 
 
@@ -96,7 +151,7 @@ resource "aws_security_group" "webSG" {
     from_port   = 22
     to_port     = 22
     protocol    = "TCP"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -155,7 +210,7 @@ resource "aws_security_group" "DBSG" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
    ingress {
     description = "MYSQL/AURORA"

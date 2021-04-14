@@ -1,5 +1,5 @@
-aws_access_key ="AKIAZ5E2DH27JMZ6FAZB"
-aws_secret_key ="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"
+aws_access_key ="AKIAZ5E2DH27MXKE5REK"
+aws_secret_key ="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"
 aws_region = "us-east-1"
 vpc_Name = "Red_Vpc"
 public_subnet = "10.1.1.0/24"
