@@ -6,11 +6,11 @@ variable "IGW_name" {}
 variable "Main_Routing_Table" {}
 variable "public_subnet"{}
 variable "subnet_name"{}
- variable "CIDRS"{
-     description ="CIDR Blocks for subnet"
-     type = "list"
-     default = ["10.0.1.0/24","10.0.2.0/24"]
-    }
+# variable "CIDRS"{
+#      description ="CIDR Blocks for subnet"
+#      type = "list"
+#      default = ["10.0.1.0/24","10.0.2.0/24"]
+#     }
   # variable "azs"{
   #    description ="Runs az in this xones"
   #    type = "list"
